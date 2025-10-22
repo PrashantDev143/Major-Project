@@ -79,9 +79,7 @@ async function main() {
 
 
 
-app.get("/",(req,res)=>{
-    res.send("Working");
-});
+
 
 
 app.use(session(sessionOptions));
