@@ -1,0 +1,166 @@
+<%- layout("/layout/boilerplate") %>
+
+<div class="row justify-content-center mt-3">
+  <div class="col-12 col-md-10 col-lg-8">
+
+    <h3 class="mb-3">Listing details</h3>
+
+    <!-- Listing Card -->
+    <div class="card show-card mb-3">
+      <img
+        src="<%= listing.image.url %>"
+        class="card-img-top show-img"
+        alt="listing_image"
+        style="height:28rem; object-fit:cover;"
+      >
+      <div class="card-body">
+        <h5 class="card-title"><%= listing.title %></h5>
+        <p class="card-text mb-0">
+          Posted by: <%= listing.owner.username %><br>
+        </p>
+        <p class="card-text mb-0">
+          <%= listing.description %><br>
+          <%= listing.location %><br>
+          &#8377;<%= (listing.price).toLocaleString("en-IN") %><br>
+          <%= listing.country %><br>
+        </p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex gap-2 mb-4">
+      <form method="GET" action="/listings/<%= listing._id %>/edit" class="d-inline">
+        <button class="btn btn-dark">Edit</button>
+      </form>
+
+      <form method="POST" action="/listings/<%= listing._id %>?_method=DELETE" class="d-inline">
+        <button class="btn btn-danger">Delete</button>
+      </form>
+    </div>
+
+    <hr>
+
+    <!-- Reviews Section -->
+    <% if(currentUser){ %>
+      <div class="card p-3 mb-4">
+        <h4 class="mb-3">Leave a Review</h4>
+        <form
+          action="/listings/<%= listing._id %>/reviews"
+          method="POST"
+          novalidate
+          class="needs-validation"
+        >
+          <div class="mb-3">
+            <label for="rating" class="form-label">Rating</label>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              id="rating"
+              name="review[rating]"
+              class="form-range"
+            >
+          </div>
+
+          <div class="mb-3">
+            <label for="comment" class="form-label">Comments</label>
+            <textarea
+              id="comment"
+              name="review[comment]"
+              rows="5"
+              cols="30"
+              class="form-control"
+              required
+            ></textarea>
+            <div class="invalid-feedback">Please add some comments for review.</div>
+          </div>
+
+          <button class="btn btn-outline-dark">Submit</button>
+        </form>
+      </div>
+    <% } %>
+
+    <!-- Reviews List -->
+    <div class="row gy-3">
+      <p class="fw-bold mb-3">All Reviews</p>
+      <% for (review of listing.reviews) { %>
+        <div class="col-12 col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">@<%= review.author.username %></h5>
+              <p class="card-text mb-0">
+                <b>Rating:</b> <%= review.rating %> stars <br>
+                <b>Comment:</b> <%= review.comment %>
+              </p>
+            </div>
+            <div class="card-footer bg-white">
+              <form
+                class="d-inline"
+                method="POST"
+                action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE"
+              >
+                <button class="btn btn-sm btn-dark">Delete</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Map Section -->
+    <div class="mt-4">
+      <h3>Where You'll be</h3>
+      <div id="map" style="height:400px; width:100%; border-radius:10px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const apiKey = "OraJntZ05UyOccA7L6E4"; // MapTiler API key
+    const locationName = "<%= listing.location %>"; // e.g., "Mumbai, India"
+
+    // Fetch coordinates from MapTiler Geocoding API
+    async function getCoordinates(location) {
+      try {
+        const response = await fetch(`https://api.maptiler.com/geocoding/${encodeURIComponent(location)}.json?key=${apiKey}`);
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          return data.features[0].geometry.coordinates; // [lng, lat]
+        }
+      } catch (err) {
+        console.error("Geocoding error:", err);
+      }
+      // Fallback coordinates
+      return [77.5946, 12.9716];
+    }
+
+    const [lng, lat] = await getCoordinates(locationName);
+
+    // Initialize MapLibre map
+    const map = new maplibregl.Map({
+      container: "map",
+      style: `https://api.maptiler.com/maps/streets/style.json?key=${apiKey}`,
+      center: [lng, lat],
+      zoom: 12
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+
+    new maplibregl.Marker({ color: "#e63946" })
+      .setLngLat([lng, lat])
+      .setPopup(new maplibregl.Popup({ offset: 25 }).setText(`📍 ${locationName}`))
+      .addTo(map);
+
+    map.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showAccuracyCircle: false
+      })
+    );
+
+    setTimeout(() => map.resize(), 500);
+  });
+</script>

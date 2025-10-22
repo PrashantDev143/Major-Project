@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MapTiler Geocoding Example</title>
+
+  <!-- MapLibre GL CSS -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+  <style>
+    body { margin: 0; padding: 0; font-family: "Plus Jakarta Sans", sans-serif; }
+    #map { height: 100vh; width: 100%; }
+    #searchBox {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 10;
+      width: 260px;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Search input -->
+  <input id="searchBox" type="text" placeholder="Search for a place... (e.g., Mumbai)" />
+
+  <!-- Map container -->
+  <div id="map"></div>
+
+  <script>
+    const apiKey = "YOUR_API_KEY"; // Replace with your MapTiler API key
+
+    // Initialize MapLibre map using MapTiler tiles
+    const map = new maplibregl.Map({
+      container: "map",
+      style: `https://api.maptiler.com/maps/streets/style.json?key=${apiKey}`,
+      center: [77.5946, 12.9716], // Default: Bengaluru
+      zoom: 11
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+    let marker = null;
+
+    // Geocoding (search for places)
+    document.getElementById("searchBox").addEventListener("keyup", async (e) => {
+      if (e.key === "Enter") {
+        const query = e.target.value.trim();
+        if (!query) return;
+
+        const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.features && data.features.length > 0) {
+          const place = data.features[0];
+          const [lng, lat] = place.geometry.coordinates;
+
+          // Fly to the searched location
+          map.flyTo({ center: [lng, lat], zoom: 13 });
+
+          // Remove old marker if exists
+          if (marker) marker.remove();
+
+          // Add new marker and popup
+          marker = new maplibregl.Marker({ color: "#ff4b5c" })
+            .setLngLat([lng, lat])
+            .setPopup(new maplibregl.Popup().setText(place.place_name))
+            .addTo(map);
+
+          marker.togglePopup();
+        } else {
+          alert("No results found for that location.");
+        }
+      }
+    });
+  </script>
+</body>
+</html>
