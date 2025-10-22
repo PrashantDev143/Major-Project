@@ -79,8 +79,8 @@ async function main() {
 
 
 
-app.get("/",(req,res)=>{
-    res.render("index.ejs")
+app.get("/", (req, res) => {
+    res.render("listings/index.ejs");
 });
 
 
