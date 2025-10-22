@@ -161,7 +161,11 @@ app.use((err,req,res,next)=>{
    let {statuscode=500,message="Something Went Wrong"}=err;
 // res.status(statuscode).send(message);
   return res.render("error.ejs",{err});
-})
+});
+app.get("/", (req, res) => {
+    res.render("listings/index.ejs");
+});
+
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
