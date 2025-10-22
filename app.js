@@ -79,7 +79,9 @@ async function main() {
 
 
 
-
+app.get("/",(req,res)=>{
+    res.render("index.ejs")
+});
 
 
 app.use(session(sessionOptions));
